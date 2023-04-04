@@ -1,0 +1,5 @@
+in this code we can simply exploit how atoi works and ths comparison at the end
+if we pass an empty string to atoi it will get back the number 0 which is used
+in the code as an index for thr buffer making it like an empty string, so when
+is's compared to the argv[1] which is also an empty string it will return 0 and
+launch a shell
