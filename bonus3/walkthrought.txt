@@ -3,3 +3,8 @@ if we pass an empty string to atoi it will get back the number 0 which is used
 in the code as an index for thr buffer making it like an empty string, so when
 is's compared to the argv[1] which is also an empty string it will return 0 and
 launch a shell
+
+bonus3@RainFall:~$ ./bonus3 ""
+$ cat /home/user/end/.pass
+3321b6f81659f9a71c76616f606e4b50189cecfea611393d5d649f75e157353c
+
